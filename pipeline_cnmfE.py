@@ -14,7 +14,7 @@ You can also run a large part of the pipeline with a single method
 
 Demo is also available as a jupyter notebook (see demo_pipeline_cnmfE.ipynb)
 """
-
+import timer
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,7 +65,7 @@ def main():
 
 # %% First setup some parameters for motion correction
     # dataset dependent parameters
-    fnames = ['C:\\Users\\student\\caiman_data\\example_movies\\1.avi']  # filename to be processed
+    fnames = [r'D:\CaImAn_Data\1.avi']  # filename to be processed
     #fnames = [download_demo(fnames[0])]  # download file if not already present
     filename_reorder = fnames
     fr = 10                          # movie frame rate
@@ -102,6 +102,8 @@ def main():
 # %% MOTION CORRECTION
 #  The pw_rigid flag set above, determines where to use rigid or pw-rigid
 #  motion correction
+    st = time.time()
+
     if motion_correct:
         # do motion correction rigid
         mc = MotionCorrect(fnames, dview=dview, **opts.get_group('motion'))
@@ -130,6 +132,9 @@ def main():
     Yr, dims, T = cm.load_memmap(fname_new,mode='r+')
     images = Yr.T.reshape((T,) + dims, order='F')
 
+    et = time.time()
+    elapsed_time = et - st
+    print('Execution time:', elapsed_time, 'seconds')
     # test code to subtract the minimum image
     #path_to_normalized_images = 'C:\\Users\\student\\caiman_data\\example_movies\\normalized.mmmap'
     # normalized_images = np.memmap(path_to_normalized_images, dtype=images.dtype,
@@ -141,12 +146,40 @@ def main():
     # normalized_Yr, dims, T = cm.load_memmap(fname_normalized,mode='r+')
     # normalized_images = normalized_Yr.T.reshape((T,) + dims, order='F')
     #
+#%% Vignette removal
+
+
+    st = time.time()
+
+    mean_image_before = np.mean(images[:10000:5], axis=0)
     min_image = np.min(images, axis=0)
     images[:] = images - min_image
+    mean_image_after = np.mean(images[:10000:5], axis=0)
+    et = time.time()
+    elapsed_time = et - st
+    print('Execution time:', elapsed_time, 'seconds')
+
+    #plot both images to compare
+    fig = plt.figure(figsize=(10, 5))
+    # Adds a subplot at the 1st position
+    fig.add_subplot(1, 2, 1)
+
+    # showing image
+    plt.imshow(mean_image_before)
+    plt.axis('off')
+    plt.title("before")
+
+    # Adds a subplot at the 2nd position
+    fig.add_subplot(1, 2, 2)
+
+    # showing image
+    plt.imshow(mean_image_after)
+    plt.axis('off')
+    plt.title("after")
 
 # %% Parameters for source extraction and deconvolution (CNMF-E algorithm)
 
-    p = 1               # order of the autoregressive system
+    p = 1               # order of the autoregressive system( transients in your data rise instantaneously)
     K = None            # upper bound on number of components per patch, in general None for 1p data
     gSig = (5, 5)       # gaussian width of a 2D gaussian kernel, which approximates a neuron (important!)
     gSiz = (21, 21)     # average diameter of a neuron, in general 4*gSig+1 (important!)
@@ -156,7 +189,7 @@ def main():
     merge_thr = .7      # merging threshold, max correlation allowed
     rf =30             # half-size of the patches in pixels. e.g., if rf=40, patches are 80x80
     #rf = 20
-    stride_cnmf = 35    # amount of overlap between the patches in pixels (to prevent splitting cells)
+    stride_cnmf = 30    # amount of overlap between the patches in pixels (to prevent splitting cells)
     #                     (keep it at least large as gSiz, i.e 4 times the neuron size gSig)
     tsub = 1            # downsampling factor in time for initialization,
     #                     increase if you have memory problems
@@ -172,8 +205,8 @@ def main():
     #                         gnb<-1: Don't return background
     nb_patch = 0        # number of background components (rank) per patch if gnb>0,
     #                     else it is set automatically
-    min_corr = .77       # min peak value from correlation image (important!)
-    min_pnr = 5.4        # min peak to noise ration from PNR image (important!)
+    min_corr = .85       # min peak value from correlation image (important!)
+    min_pnr = 5.9        # min peak to noise ration from PNR image (important!)
     ssub_B = 2          # additional downsampling factor in space for background
     ring_size_factor = 1.4  # radius of ring is gSiz*ring_size_factor (something about the neuro size?)
 
@@ -217,6 +250,7 @@ def main():
     print(min_corr) # min correlation of peak (from correlation image)
     print(min_pnr)  # min peak to noise ratio
 
+
 # %% RUN CNMF ON PATCHES
 
     st = time.time()
@@ -246,7 +280,6 @@ def main():
     print('Number of accepted components: ', len(cnm.estimates.idx_components))
 
 # %% PLOT COMPONENTS
-    #dims = tuple(int(d/2) for d in dims) #extra code
     cnm.dims = dims
     display_images = True           # Set to true to show movies and images
     if display_images:
