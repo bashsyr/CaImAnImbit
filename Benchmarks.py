@@ -1,22 +1,22 @@
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-#different matplotlib backend for better plots
-import matplotlib
-matplotlib.rcParams['backend'] = 'TkAgg'
-##
-import caiman as cm
-from caiman.source_extraction import cnmf
-from caiman.utils.utils import download_demo
-from caiman.utils.visualization import inspect_correlation_pnr
-from caiman.motion_correction import MotionCorrect
-from caiman.source_extraction.cnmf import params as params
-# extra imports for diverse code parts
-import time
-import os
-
-
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #different matplotlib backend for better plots
+    import matplotlib
+    matplotlib.rcParams['backend'] = 'TkAgg'
+    ##
+    import caiman as cm
+    from caiman.source_extraction import cnmf
+    from caiman.utils.utils import download_demo
+    from caiman.utils.visualization import inspect_correlation_pnr
+    from caiman.motion_correction import MotionCorrect
+    from caiman.source_extraction.cnmf import params as params
+    # extra imports for diverse code parts
+    import time
+    import os
+    import contextlib
+    import io
 # %% start the cluster
     try:
         cm.stop_server()  # stop it if it was running
@@ -130,54 +130,129 @@ import os
 
     # parameter_name = "Parameter:"
 
-    #%% Loop through the possible parameters and test them and save the results
+
+# %%SET THE PIPELINE FUNCTION TO RUN AT ONCE AND collect some stats
+    def runCaiman(parameter_name: str):
+        st = time.time()
+        # cnm1 = cnmf.CNMF(n_processes=61, params=test_opts, dview=dview)
+        # cnm1.fit_file(motion_correct=True)
+        # del cnm1.estimates.f
+        et = time.time()
+        elapsed_time = et - st
+        # collect stats and put them in stats dictionary
+        cnm1.stats = {}
+        cnm1.stats['time'] = elapsed_time
+        cnm1.stats['Parameters:'] = parameter_name
+        cnm1.stats['Number_of_neuros'] = len(cnm1.estimates.C)
+        ##
+        cnm1.save(fnames[0] + parameter_name + "_Time=" + str(int(elapsed_time)) + "s" + "_results.hdf5")
+        print('Execution time:', elapsed_time, 'seconds')
+
+
+
+#%% Loop through the possible parameters, test them and save the results
+    start = time.time()
     def loop():
-        start = time.time()
+
 
         parameter_name = r"Parameter_"
         parameter_name_default = r"Parameter_"
-        for t_p in range(0, 3):
-            parameter_name = parameter_name + 'p=' + str(t_p)
-            test_opts.change_params(params_dict={'p':t_p})
-            runCaiman(parameter_name)
-            parameter_name = parameter_name_default
-        test_opts.change_params(params_dict={'p': p})
+        # for t_p in range(0, 3):
+        #     parameter_name = parameter_name + 'p=' + str(t_p)
+        #     test_opts.change_params(params_dict={'p':t_p})
+        #     try:
+        #         runCaiman(parameter_name)
+        #     except:
+        #         print('CaImAn did not work for p='+ str(t_p))
+        #     parameter_name = parameter_name_default
+        # test_opts.change_params(params_dict={'p': p})
 
-        for t_rf in range (20,61,5):
-            parameter_name = parameter_name + 'rf=' + str(t_rf)
-            test_opts.change_params(params_dict={'rf': t_rf})
-            runCaiman(parameter_name)
-            parameter_name = parameter_name_default
-        test_opts.change_params(params_dict={'rf': rf})
+        # for t_rf in range (20,61,5):
+        #     parameter_name = parameter_name + 'rf=' + str(t_rf)
+        #     test_opts.change_params(params_dict={'rf': t_rf})
+        #     try:
+        #         runCaiman(parameter_name)
+        #     except:
+        #         print('CaImAn did not work for rf=' + str(t_rf))
+        #     parameter_name = parameter_name_default
+        # test_opts.change_params(params_dict={'rf': rf})
+        #
+        # for t_merge_thr in np.arange (.6,.96,.05):
+        #     t_merge_thr = round(t_merge_thr, 2)
+        #     parameter_name = parameter_name + 'merge_thr=' + str(t_merge_thr)
+        #     test_opts.change_params(params_dict={'merge_thr': t_merge_thr})
+        #     runCaiman(parameter_name)
+        #     parameter_name = parameter_name_default
+        # test_opts.change_params(params_dict={'merge_thr': merge_thr})
+        #
+        # for t_stride in range (20,50,5):
+        #     parameter_name = parameter_name + 'stride=' + str(t_stride)
+        #     test_opts.change_params(params_dict={'stride': t_stride})
+        #     runCaiman(parameter_name)
+        #     parameter_name = parameter_name_default
+        # test_opts.change_params(params_dict={'stride': stride_cnmf})
 
-        for t_merge_thr in np.arange (.6,.96,.05):
-            t_merge_thr = round(t_merge_thr, 2)
-            parameter_name = parameter_name + 'merge_thr=' + str(t_merge_thr)
-            test_opts.change_params(params_dict={'merge_thr': t_merge_thr})
-            runCaiman(parameter_name)
-            parameter_name = parameter_name_default
-        test_opts.change_params(params_dict={'merge_thr': merge_thr})
 
-        for t_stride in range (20,50,5):
-            parameter_name = parameter_name + 'stride=' + str(t_stride)
-            test_opts.change_params(params_dict={'stride': t_stride})
-            runCaiman(parameter_name)
-            parameter_name = parameter_name_default
-        test_opts.change_params(params_dict={'stride': stride_cnmf})
 
-        for t_gSig in range (2,8,1):
-            parameter_name = parameter_name + 'gSig=' + str(t_gSig)
-            test_opts.change_params(params_dict={'gSig': t_gSig})
-            runCaiman(parameter_name)
-            parameter_name = parameter_name_default
-        test_opts.change_params(params_dict={'gSig': gSig})
-
-        for t_gnb in range (-2,2,1):
+        for t_gnb in range (-2,3,1):
             parameter_name = parameter_name + 'gnb=' + str(t_gnb)
             test_opts.change_params(params_dict={'nb': t_gnb})
             runCaiman(parameter_name)
             parameter_name = parameter_name_default
         test_opts.change_params(params_dict={'nb': gnb})
+
+        for t_decay_time in np.arange (0.2,1.6,0.1):
+            t_decay_time = round(t_decay_time, 1)
+            parameter_name = parameter_name + 'decay_time=' + str(t_decay_time)
+            test_opts.change_params(params_dict={'decay_time':t_decay_time})
+            try:
+                runCaiman(parameter_name)
+            except:
+                print('CaImAn did not work for decay_time='+ str(t_decay_time))
+            parameter_name = parameter_name_default
+        test_opts.change_params(params_dict={'decay_time': decay_time})
+
+
+        for t_ring_size_factor in np.arange (1.0,2,0.1):
+            t_ring_size_factor = round(t_ring_size_factor, 1)
+            parameter_name = parameter_name + 'ring_size_factor=' + str(t_ring_size_factor)
+            test_opts.change_params(params_dict={'ring_size_factor':t_ring_size_factor})
+            try:
+                runCaiman(parameter_name)
+            except:
+                print('CaImAn did not work for ring_size_factor='+ str(t_ring_size_factor))
+            parameter_name = parameter_name_default
+        test_opts.change_params(params_dict={'ring_size_factor': ring_size_factor})
+
+
+
+        for t_K in np.arange (0,6,1):
+            t_K = round(t_K, 1)
+            parameter_name = parameter_name + 'K=' + str(t_K)
+            test_opts.change_params(params_dict={'K':t_K})
+            try:
+                runCaiman(parameter_name)
+            except:
+                print('CaImAn did not work for K='+ str(t_K))
+            parameter_name = parameter_name_default
+        test_opts.change_params(params_dict={'K': K})
+
+
+
+        # loop for changing gSig, gSiz at the same time
+        for t_gSig in range (2,8,1):
+            tuple_gSig = (t_gSig, t_gSig)
+            parameter_name = parameter_name + 'gSig=' + str(t_gSig)
+            test_opts.change_params(params_dict={'gSig':(t_gSig, t_gSig)})
+            for t_gSiz in range (4*t_gSig-4,4*t_gSig+5):
+                temp = parameter_name
+                parameter_name = parameter_name + 'gSiz=' + str(t_gSiz)
+                test_opts.change_params(params_dict={'gSiz': (t_gSiz, t_gSiz)})
+                runCaiman(parameter_name)
+                parameter_name = temp # to remove gSiz from the name but keep gSig
+            test_opts.change_params(params_dict={'gSiz': gSiz})
+            parameter_name = parameter_name_default
+        test_opts.change_params(params_dict={'gSig': gSig})
 
     loop()
 
@@ -186,16 +261,6 @@ import os
     elapsed_time = int(elapsed_time) / 60
     with open(r'D:\CaImAn_Data\time.txt', 'w') as f:
         f.write('%d' % elapsed_time)
-    os.system("shutdown /s /t 1")
+    #os.system("shutdown /s /t 1")
 
-    # %%RUN THE PIPELINE AT ONCE
-    def runCaiman(parameter_name:str):
-        st = time.time()
-        cnm1 = cnmf.CNMF(n_processes=61, params=test_opts, dview=dview)
-        cnm1.fit_file(motion_correct=True)
-        del cnm1.estimates.f
-        et = time.time()
-        elapsed_time = et - st
-        cnm1.save(fnames[0] + parameter_name + "_Time=" + str(int(elapsed_time))+ "s"  + "_results.hdf5")
-        print('Execution time:', elapsed_time, 'seconds')
 
