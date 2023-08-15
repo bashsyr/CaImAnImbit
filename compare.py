@@ -17,6 +17,7 @@ import os
 import contextlib
 import io
 import glob
+import scipy
 
 # %% start the cluster
     try:
@@ -33,7 +34,7 @@ import glob
 
 
 #%% import Results files
-    parameter_name = 'stride='         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
+    parameter_name = 'K='         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
     path = r'D:\CaImAn_Data\*'          # path to the result files
     n_frames = 1000  # number of frames in the movie
     result_files_names = glob.glob(path + parameter_name + r'*.hdf5')
@@ -44,13 +45,11 @@ import glob
 
 
 
-#%% plot the results:
+#%% plot Temporal results:
     results = cm.base.rois.register_multisession([m.estimates.A for m in cnm], dims = cnm[0].dims)
-    fig, axes = plt.subplots(len(results[1]), figsize = (10,30))
+    fig, axes = plt.subplots(len(results[1]), figsize = (10,35))
     x = np.arange(n_frames)/25
     for ii,ele in enumerate(results[1]):
-    #   shared_comps[1][1:5]
-        print(ele[0])
         if np.isnan(ele[0]):
             continue
         if np.isnan(ele[1]):
@@ -59,4 +58,19 @@ import glob
             axes[ii].plot(x,m.estimates.C[int(ele[0])])
 
 
-cm.base.rois.find_matches()
+
+#%% plot the shared Neurons across all the sessions
+    common_neurons = [n for n, ele in enumerate(results[1]) if not any(np.isnan(ele))] # list of the shared neurons among all sessions
+    common_A = results[0]               # copy the result matrix to remove the non-shared neurons
+    rest_neurons = [k for k in range (0, len(results[0][0])) if k not in common_neurons]     # get indexes of non-common neurons
+    common_A = np.delete(common_A, rest_neurons, 1) # remove them from the result list
+    # plot the results
+    common_A = scipy.sparse.csc_matrix(common_A)
+    img = np.reshape(np.array(common_A.mean(1)), cnm[1].estimates.dims, order='F')
+    coordinates = cm.utils.visualization.get_contours(common_A, img.shape, thr=0.2, thr_method='max')
+    plt.figure()
+
+    cm.utils.visualization.plot_contours(common_A, img, coordinates=coordinates,
+                                         display_numbers=True,
+                                         cmap='viridis')
+    print("Number of shared Neurons=", len(common_neurons))

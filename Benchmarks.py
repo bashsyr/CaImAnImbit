@@ -1,5 +1,4 @@
-
-
+    # CAIMAN imports
     import matplotlib.pyplot as plt
     import numpy as np
     #different matplotlib backend for better plots
@@ -17,7 +16,7 @@
     import os
     import contextlib
     import io
-# %% start the cluster
+    # %% start the cluster
     try:
         cm.stop_server()  # stop it if it was running
     except():
@@ -29,7 +28,7 @@
 
 
 
-#%%  Standard parameters definition
+    #%%  Standard parameters definition
 
     # dataset dependent parameters
     fnames = [r'D:\CaImAn_Data\1.avi']  # filename to be processed
@@ -131,12 +130,12 @@
     # parameter_name = "Parameter:"
 
 
-# %%SET THE PIPELINE FUNCTION TO RUN AT ONCE AND collect some stats
+    # %%SET THE PIPELINE FUNCTION TO RUN AT ONCE AND collect some stats
     def runCaiman(parameter_name: str):
         st = time.time()
-        # cnm1 = cnmf.CNMF(n_processes=61, params=test_opts, dview=dview)
-        # cnm1.fit_file(motion_correct=True)
-        # del cnm1.estimates.f
+        cnm1 = cnmf.CNMF(n_processes=61, params=test_opts, dview=dview)
+        cnm1.fit_file(motion_correct=True)
+        del cnm1.estimates.f
         et = time.time()
         elapsed_time = et - st
         # collect stats and put them in stats dictionary
