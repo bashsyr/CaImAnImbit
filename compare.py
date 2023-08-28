@@ -1,3 +1,8 @@
+"""
+Code snip to compare and plot different results (of the same animal) to check the effect of changing certain parameters
+Author: Bashar
+"""
+
 # CAIMAN imports
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,7 +31,7 @@ import scipy
         pass
 
     c, dview, n_processes = cm.cluster.setup_cluster(backend='local', # if error try to change
-                                                     n_processes=61,  # number of process to use, if you go out of memory try to reduce this one
+                                                     n_processes=16,  # number of process to use, if you go out of memory try to reduce this one
                                                      single_thread=False)
 
 

@@ -60,12 +60,12 @@ def main():
         pass
 
     c, dview, n_processes = cm.cluster.setup_cluster(backend='local', # if error try to change
-                                                     n_processes=61,  # number of process to use, if you go out of memory try to reduce this one
+                                                     n_processes=16,  # number of process to use, if you go out of memory try to reduce this one
                                                      single_thread=False)
 
 # %% First setup some parameters for motion correction
     # dataset dependent parameters
-    fnames = [r'D:\CaImAn_Data\1.avi']  # filename to be processed
+    fnames = [r'D:\CaImAn_Data\3.avi']  # filename to be processed
     #fnames = [download_demo(fnames[0])]  # download file if not already present
     filename_reorder = fnames
     fr = 10                          # movie frame rate
@@ -75,7 +75,7 @@ def main():
     motion_correct = True            # flag for motion correction
     pw_rigid = False                 # flag for pw-rigid motion correction
 
-    gSig_filt = (3, 3)   # size of filter, in general gSig (see below),
+    gSig_filt = (5, 5)   # size of filter, in general gSig (see below),
     #                      change this one if algorithm does not work (very important para)
     max_shifts = (5, 5)  # maximum allowed rigid shift
     strides = (48, 48)   # start a new patch for pw-rigid motion correction every x pixels
@@ -137,8 +137,8 @@ def main():
     print('Execution time:', elapsed_time, 'seconds')
     # test code to subtract the minimum image
     #path_to_normalized_images = 'C:\\Users\\student\\caiman_data\\example_movies\\normalized.mmmap'
-    # normalized_images = np.memmap(path_to_normalized_images, dtype=images.dtype,
-    #                               shape=images.shape, mode='w+')
+    # normalized_images = np.memmap(path_to_normalized_images, dtype=memmap_list.dtype,
+    #                               shape=memmap_list.shape, mode='w+')
     # normalized_images = np.clip(normalized_images, 0, 255).astype(np.uint8)
 
     # fname_normalized = cm.save_memmap(filename_reorder, base_name='normalized_memmap_',
@@ -159,7 +159,7 @@ def main():
     elapsed_time = et - st
     print('Execution time:', elapsed_time, 'seconds')
 
-    #plot both images to compare
+    #plot both memmap_list to compare
     fig = plt.figure(figsize=(10, 5))
     # Adds a subplot at the 1st position
     fig.add_subplot(1, 2, 1)
@@ -237,16 +237,14 @@ def main():
                                     'border_pix': bord_px})                # number of pixels to not consider in the borders)
 # %% Compute a summary image
 # change swap dim if output looks weird, it is a problem with tiffile
-    #images = images[::1,::2,::2] # extra code
-    #dims = tuple(int(d) for d in dims)
     cn_filter, pnr = cm.summary_images.correlation_pnr(images[::1], gSig=gSig[0], swap_dim=False)
-    # if your images file is too long this computation will take unnecessarily
-    # long time and consume a lot of memory. Consider changing images[::1] to
-    # images[::5] or something similar to compute on a subset of the data
+    # if your memmap_list file is too long this computation will take unnecessarily
+    # long time and consume a lot of memory. Consider changing memmap_list[::1] to
+    # memmap_list[::5] or something similar to compute on a subset of the data
 
-    # inspect the summary images and set the parameters
+    # inspect the summary memmap_list and set the parameters
     inspect_correlation_pnr(cn_filter, pnr)
-    # print parameters set above, modify them if necessary based on summary images
+    # print parameters set above, modify them if necessary based on summary memmap_list
     print(min_corr) # min correlation of peak (from correlation image)
     print(min_pnr)  # min peak to noise ratio
 
@@ -281,13 +279,13 @@ def main():
 
 # %% PLOT COMPONENTS
     cnm.dims = dims
-    display_images = True           # Set to true to show movies and images
+    display_images = True           # Set to true to show movies and memmap_list
     if display_images:
         cnm.estimates.plot_contours(img=cn_filter, idx=cnm.estimates.idx_components)
         cnm.estimates.view_components(images, idx=cnm.estimates.idx_components)
 
 # %% MOVIES
-    display_images = True           # Set to true to show movies and images
+    display_images = True           # Set to true to show movies and memmap_list
     if display_images:
         # fully reconstructed movie
         cnm.estimates.play_movie(images, q_max=99.5, magnification=2,

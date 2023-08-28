@@ -181,16 +181,16 @@ def main():
                                     'del_duplicates': True,                # whether to remove duplicates from initialization
                                     'border_pix': bord_px})                # number of pixels to not consider in the borders)
 
-# %% compute some summary images (correlation and peak to noise)
+# %% compute some summary memmap_list (correlation and peak to noise)
     # change swap dim if output looks weird, it is a problem with tiffile
     cn_filter, pnr = cm.summary_images.correlation_pnr(images[::1], gSig=gSig[0], swap_dim=False)
-    # if your images file is too long this computation will take unnecessarily
-    # long time and consume a lot of memory. Consider changing images[::1] to
-    # images[::5] or something similar to compute on a subset of the data
+    # if your memmap_list file is too long this computation will take unnecessarily
+    # long time and consume a lot of memory. Consider changing memmap_list[::1] to
+    # memmap_list[::5] or something similar to compute on a subset of the data
 
-    # inspect the summary images and set the parameters
+    # inspect the summary memmap_list and set the parameters
     inspect_correlation_pnr(cn_filter, pnr)
-    # print parameters set above, modify them if necessary based on summary images
+    # print parameters set above, modify them if necessary based on summary memmap_list
     print(min_corr) # min correlation of peak (from correlation image)
     print(min_pnr)  # min peak to noise ratio
 
@@ -219,13 +219,13 @@ def main():
 
 # %% PLOT COMPONENTS
     cnm.dims = dims
-    display_images = True           # Set to true to show movies and images
+    display_images = True           # Set to true to show movies and memmap_list
     if display_images:
         cnm.estimates.plot_contours(img=cn_filter, idx=cnm.estimates.idx_components)
         cnm.estimates.view_components(images, idx=cnm.estimates.idx_components)
 
 # %% MOVIES
-    display_images = False           # Set to true to show movies and images
+    display_images = False           # Set to true to show movies and memmap_list
     if display_images:
         # fully reconstructed movie
         cnm.estimates.play_movie(images, q_max=99.5, magnification=2,
