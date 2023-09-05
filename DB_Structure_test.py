@@ -4,9 +4,12 @@ Author: Bashar
 """
 #%% imports
     import datastructure_tools as dt
-    from miniscope_pipeline_DB import MiniscopeDataBaseAccess
-    from miniscope_pipeline_DB.MiniscopeDataBaseAccess import MiniscopePipeline
     import caiman as cm
+    from calcium_pipeline_DB import CalciumImagingDataBaseAccess
+    from calcium_pipeline_DB.CalciumImagingDataBaseAccess import CalciumImagingDataBaseAccess
+
+##%% Simple run
+    minipipe = CalciumImagingDataBaseAccess(dview = None)         # Start new cluster
 
 #%% Setup Code
     _DB = dt.DataBaseAccess.DataBaseAccess()
@@ -20,8 +23,9 @@ Author: Bashar
                                                      n_processes=16,  # number of process to use, if you go out of memory try to reduce this one
                                                      single_thread=False)
 
-    #minipipe = MiniscopePipeline(dview = None)         # Start new cluster
-    minipipe = MiniscopePipeline(dview = dview, n_processes = n_processes)   # Start with parallel processing
+    #minipipe = CalciumImagingDataBaseAccess(dview = None)         # Start new cluster
+    #minipipe = MiniscopePipeline(dview = dview, n_processes = n_processes)   # Start with parallel processing
+    calciumpipe = CalciumImagingDataBaseAccess.CalciumImagingDataBaseAccess()
 
 
 #%%
