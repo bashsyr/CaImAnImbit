@@ -1,5 +1,5 @@
 """
-Code to estimate the value of Session specific Caiman parameters (minPNR, minSNR)
+Code to estimate the value of the summary image (min_corr,min-pnr) unsing F_frame files
 Author: Bashar
 """
 

@@ -15,6 +15,7 @@ Code to automate the process of choosing the min_pnr and min_corr parameters
     import natsort
     import glob
     import caiman as cm
+    from pathlib import Path
 #%% Load parameters and files
 
 
@@ -51,14 +52,31 @@ Code to automate the process of choosing the min_pnr and min_corr parameters
               ]
 
 
-#%% The main Benchmark code
-    for path in paths:
 
-        files_names = glob.glob(path + r'C_frames*.mmap')
+#%% The main Benchmark code
+    for index,i in enumerate(paths):
+        # run caiman with standard parameters and collect results
+        files_names = glob.glob(i + r'*C_frames*.mmap')
         files_names = natsort.natsorted(files_names)
+        if not files_names:
+            pass
         file_name = files_names[-1]
-        # opts.change_params(params_dict={'fnames': files_names})
-        # runCaiman(opts, parameter_name = 'manual')
+        opts.change_params(params_dict={'fnames': file_name})
+
+        # runCaiman(opts, parameter_name = f'{index+4}manual')
+
+
+        # calculate the PNR and SNR and use these values
+        # cn_filters,pnr_list = get_cn_pnr(i)
+        min_corr_list = [7,.75,.8,.85,.9,.95]
+        min_pnr_list =  [5,5.5,6,6.5,7,7.5]
+        for min_corr in min_corr_list:
+            for min_pnr in min_pnr_list:
+                opts.change_params(params_dict={'min_corr': min_corr,'min_pnr': min_pnr})
+                runCaiman(opts, parameter_name=f'{index}min_corr={min_corr}_min_pnr={min_pnr}')
+
+        # # reset to original parameters
+        opts.change_params(params_dict=params_dict)
 
 
 
@@ -86,30 +104,22 @@ Code to automate the process of choosing the min_pnr and min_corr parameters
         cnm1.stats['time'] = elapsed_time
         cnm1.stats['Parameters:'] = parameter_name
         cnm1.stats['Number_of_neuros'] = len(cnm1.estimates.C)
+        # cnm1.stats['min_pnr'] = cnm1.params
         ##
         cnm1.save(results_path + parameter_name + "_Time=" + str(int(elapsed_time)) + "s" + "_results.hdf5")
         # print('Execution time:', elapsed_time, 'seconds')
 
 
-
-def Calulate_minPNR_minCORR(cn_filters: list = None, pnr_list: list = None):
-    if cn_filters == None or pnr_list == None:
-        print("no filters provided, using default values (min_corr = .85) , min_pnr = 5.9 ")
-        min_corr = .85
-        min_pnr = 5.9
-        return min_corr, min_pnr
-    if len(cn_filters) != len(cn_filters):
-        raise Warning('Warning: pnr and cn_cilter lists are not the same size')
-
+def calculate_minCORR(cn_filters: list):
     # do trough detection to calculate min_corr
-    Troughs = [1 for i in range(len(cn_filters))]
+    Troughs = []
     for i in range(len(cn_filters)):
 
         data = cn_filters[i].flatten()
         kde = gaussian_kde(data)
 
         # Define the range for evaluating KDE
-        x = np.linspace(.2, max(data), 1000)  # .2 to prevent it from detecting peaks at the beginning
+        x = np.linspace(.45, max(data), 1000)  # .2 to prevent it from detecting peaks at the beginning
         y = kde.evaluate(x)
 
         # Find peaks
@@ -121,24 +131,29 @@ def Calulate_minPNR_minCORR(cn_filters: list = None, pnr_list: list = None):
         else:
             trough = None
 
-        # # Visualize
-        # plt.plot(x, y, label='KDE')
-        # plt.plot(x[peaks], y[peaks], "x", label='Peaks')
-        # if trough is not None:
-        #     plt.plot(x[trough], y[trough], "o", label='Trough')
-        # plt.legend()
-        # plt.show()
+        # Visualize
+        plt.figure(i)           # to print plots individually
+        plt.plot(x, y, label='KDE')
+        plt.plot(x[peaks], y[peaks], "x", label='Peaks')
+        if trough is not None:
+            plt.plot(x[trough], y[trough], "o", label='Trough')
+        plt.legend()
+        plt.show()
 
         if trough is not None:
             # print(f'Trough value: {x[trough]}')
-            Troughs[i] = x[trough]
+            Troughs.append(x[trough])
 
         # else:
         #     print("Could not identify a clear trough between peaks.")
 
     Troughs = [round(i, 2) for i in Troughs]
-    min_corr = min(Troughs)
+    print(Troughs)
+    min_corr = mean(Troughs)
+    return min_corr
 
+
+def calculate_minPNR(pnr_list: list):
     # Do a gradient decen degree detection to calculate min_pnr
     pnrs = []
     for i in range(len(pnr_list)):
@@ -171,4 +186,84 @@ def Calulate_minPNR_minCORR(cn_filters: list = None, pnr_list: list = None):
     # plt.legend()
     # plt.show()
 
-    return min_corr, min_pnr
+    return min_pnr
+
+
+def calculate_minCORR_with_Gradient_descent(cn_filters: list = None):
+    # Do a gradient descent degree detection to calculate min_corr
+    corrs = []
+    for i in range(len(cn_filters)):
+        data = cn_filters[i].flatten()
+        kde = gaussian_kde(data)
+
+        # Define the range for evaluating KDE
+        x = np.linspace(0.3, max(data), 1000)
+        y = kde.evaluate(x)
+
+        # Calculate the gradient
+        gradient = np.gradient(y)
+
+        # Target gradient value
+        target_gradient = -.005  # define the tan of the slope to get the desired cutt-off
+
+        # Find the index closest to the target gradient after the main peak
+        main_peak_idx = np.argmax(y)
+        closest_idx = np.argmin(np.abs(gradient[main_peak_idx:] - target_gradient)) + main_peak_idx
+
+        # set min_pnr as the x value of the appropriate index
+        corrs.append(x[closest_idx])
+
+        # # Visualize
+        plt.figure(i)
+        plt.plot(x, y, label='KDE')
+        plt.plot(x[main_peak_idx], y[main_peak_idx], "x", label='Main Peak')
+        plt.plot(x[closest_idx], y[closest_idx], "o", label='Closest Point to Target Gradient')
+        plt.legend()
+        plt.show()
+
+    min_corr = round(np.mean(corrs), 2)
+    print(corrs)
+    return min_corr
+
+
+def get_cn_pnr (path: str , file_increment = 5, frame_increment = 1,n = 5):
+    """
+
+    :param path: parent folder path that contains the F_frame mmap files
+    :param file_increment: take every Nth file (ex: file_increment = 5 would take every 5th mmmap)
+    :param frame_increment: the caiman implemented frame increment (take every nth frame in a file similar to file increment)
+    :param n: Number of cn filters returned (if you choose n = 5 you will get 5 cn_filters back calculated (for file_increment =5)
+              from files (1,5,10,15) for the first filter, then (2,6,11,16) for the second and so on
+    :return: two arrays
+    cn_filters: a list of the filters
+    pnr_list: list of pnr arrays
+    """
+    # calculate the PNR and SNR and use these values
+    path = Path(path)
+    files_names = list(path.glob(r'*F_frames*1000*.mmap'))
+    files_names = natsort.natsorted(files_names)
+    if not files_names:
+        raise Exception ("empty directoy or wrong path. No F_frames mmap files found")
+    cn_filters = []
+    pnr_list = []
+    for r in range(0, n):
+        images = []
+        st = time.time()
+        memmap_list = []  # a list of the individual videos as memmaps
+        for index, name in enumerate(files_names):
+            Yr, dims, T = cm.load_memmap(name, mode='r')
+            memmap_list.append(Yr.T)
+        gSig = (5, 5)
+        try:
+            images = np.concatenate(([item for item in memmap_list[r::file_increment]]), axis=0)
+            images = images.reshape(len(images), dims[0], dims[1], order='F')
+            cn_filter, pnr = cm.summary_images.correlation_pnr(images[::frame_increment], gSig=gSig[0], swap_dim=False)
+        except:
+            pass
+        et = time.time()
+        elapsed_time = et - st
+        print('Execution time:', elapsed_time, 'seconds')
+        cn_filters.append(cn_filter)
+        pnr_list.append(pnr)
+
+    return cn_filters,

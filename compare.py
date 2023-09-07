@@ -23,6 +23,7 @@ import contextlib
 import io
 import glob
 import scipy
+import natsort
 
 # %% start the cluster
     try:
@@ -43,6 +44,7 @@ import scipy
     path = r'O:\archive\projects\2023_students\Result_files\auto_pnr_banchmark\individual_results\*'          # path to the result files
     n_frames = 1000  # number of frames in the movie
     result_files_names = glob.glob(path + parameter_name + r'*.hdf5')
+    result_files_names = natsort.natsorted(result_files_names)
     cnm = []    # array of ciman objects to load the results
     for name in result_files_names:
         cnm.append(cm.source_extraction.cnmf.cnmf.load_CNMF(name))
