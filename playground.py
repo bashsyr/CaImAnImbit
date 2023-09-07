@@ -21,6 +21,117 @@ import matplotlib.pyplot as plt
     import pickle as pkl
 
 
+#%% Test for the automatic PNR CORR calculation
+
+    results = {}
+    times = []
+    path_list = []
+    cn_filters = []
+    pnr_list = []
+    frame_increments = []
+
+
+    results_file = r'O:\archive\projects\2023_students\Result_files\Test_summary_image_result.pkl'
+
+
+    paths  = [r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230705_m1310_som_1410\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230704_m1310_som_1939\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230627_m1310_som_1325\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230620_m1310_som_1711\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230619_m1310_som_0947\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230616_m1310_som_1554\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230707_m1309_som_1152\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230612_m1309_som_1302\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230707_m1308_som_1520\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230615_m1308_som_0936\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230616_m1310_som_1150\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230705_m1309_som_1453\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230705_m1308_som_1534\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230608_m1308_som_1636\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230704_m1308_som_1813\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230608_m1310_som_1357\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230621_m1310_som_0933\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230802_m1309_som_1746\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230809_m1310_som_1243\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230801_m1310_som_1056\miniscope_video\*',
+              r'O:\archive\projects\2023_intercontext\PICAST\data\1_preprocessed\20230728_m1310_som_1747\miniscope_video\*'
+              ]
+
+
+    for path in paths:
+        files_names = glob.glob(path + r'*F_frames*1000.mmap')
+        files_names = natsort.natsorted(files_names)
+        for r in range(0,5):
+            file_increment = 5
+            images = []
+            st = time.time()
+            memmap_list = []  # a list of the individual videos as memmaps
+            for index, name in enumerate(files_names):
+                Yr, dims, T = cm.load_memmap(name, mode='r')
+                memmap_list.append(Yr.T)
+            gSig = (5, 5)
+            try:
+                images = np.concatenate(([item for item in memmap_list[r::file_increment]]), axis=0)
+                images = images.reshape(len(images), dims[0], dims[1], order='F')
+                cn_filter, pnr = cm.summary_images.correlation_pnr(images[::1], gSig=gSig[0], swap_dim=False)
+            except:
+                pass
+            et = time.time()
+            elapsed_time = et - st
+            print('Execution time:', elapsed_time, 'seconds')
+            file_increment = str(file_increment)+ '_' + str(r)
+
+            frame_increments.append(file_increment)
+            times.append(elapsed_time)
+            cn_filters.append(cn_filter)
+            pnr_list.append(pnr)
+            path_list.append(path)
+            # set for the next round
+            del images
+            del memmap_list
+
+    # Save results in file
+    results['frame_increments'] = frame_increments
+    results['times'] = times
+    results['paths'] = path_list
+    results['cn_filters'] = cn_filters
+    results['pnr_list'] = pnr_list
+    pkl.dump(results, open(results_file, "wb"))
+
+
+
+    #
+    # results = pkl.load(open(results_file, "rb"))
+    # times = results['times']
+    # path_list =  results['paths']
+    # cn_filters =  results['cn_filters']
+    # pnr_list =  results['pnr_list']
+    # frame_increments = results['frame_increments']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #%% test code to make the DB calulate Summary image on a seet of F_ordered memmaps instead of the big C_ordered one
     st = time.time()
