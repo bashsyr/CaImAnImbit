@@ -23,6 +23,7 @@ import contextlib
 import io
 import glob
 import scipy
+import natsort
 
 # %% start the cluster
     try:
@@ -39,10 +40,10 @@ import scipy
 
 
 #%% import Results files
-    parameter_name = 'K='         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
-    path = r'D:\CaImAn_Data\*'          # path to the result files
-    n_frames = 1000  # number of frames in the movie
+    parameter_name = '*Auto_Time*'         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
+    path = r'O:\archive\projects\2023_students\Result_files\auto_pnr_banchmark\individual_results\*'          # path to the result files
     result_files_names = glob.glob(path + parameter_name + r'*.hdf5')
+    result_files_names = natsort.natsorted(result_files_names)
     cnm = []    # array of ciman objects to load the results
     for name in result_files_names:
         cnm.append(cm.source_extraction.cnmf.cnmf.load_CNMF(name))
@@ -53,6 +54,7 @@ import scipy
 #%% plot Temporal results:
     results = cm.base.rois.register_multisession([m.estimates.A for m in cnm], dims = cnm[0].dims)
     fig, axes = plt.subplots(len(results[1]), figsize = (10,35))
+    n_frames = len(cnm[0].estimates.YrA[0])
     x = np.arange(n_frames)/25
     for ii,ele in enumerate(results[1]):
         if np.isnan(ele[0]):
