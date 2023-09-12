@@ -59,7 +59,7 @@ import matplotlib.pyplot as plt
 
 
     for path in paths:
-        files_names = glob.glob(path + r'*F_frames*1000.mmap')
+        files_names = glob.glob(path + r'*F_frames*1000*.mmap')
         files_names = natsort.natsorted(files_names)
         for r in range(0,5):
             file_increment = 5
@@ -70,9 +70,10 @@ import matplotlib.pyplot as plt
                 Yr, dims, T = cm.load_memmap(name, mode='r')
                 memmap_list.append(Yr.T)
             gSig = (5, 5)
+            images = cm.load_movie_chain(files_names[::file_increment])
             try:
-                images = np.concatenate(([item for item in memmap_list[r::file_increment]]), axis=0)
-                images = images.reshape(len(images), dims[0], dims[1], order='F')
+                # images = np.concatenate(([item for item in memmap_list[r::file_increment]]), axis=0)
+                # images = images.reshape(len(images), dims[0], dims[1], order='F')
                 cn_filter, pnr = cm.summary_images.correlation_pnr(images[::1], gSig=gSig[0], swap_dim=False)
             except:
                 pass
@@ -245,8 +246,100 @@ import matplotlib.pyplot as plt
     # seaborn.kdeplot(cn_filter.flatten())
 
 
-#% Test powerpoint plot generation code
 
+def calculate_minCORR(cn_filters: list):
+    # do trough detection to calculate min_corr
+    Troughs = []
+    for i in range(len(cn_filters)):
+
+        data = cn_filters[i].flatten()
+        kde = gaussian_kde(data)
+
+        # Define the range for evaluating KDE
+        x = np.linspace(.3, max(data), 1000)  # .2 to prevent it from detecting peaks at the beginning
+        y = kde.evaluate(x)
+
+        # Find peaks
+        peaks, _ = find_peaks(y, distance=20)  # 'distance' may need adjustment based on your data
+
+        # Find the trough between the main peaks (assuming the two main peaks are the first two found)
+        if len(peaks) > 1:
+            trough = np.argmin(y[peaks[0]:peaks[1]]) + peaks[0]
+        else:
+            trough = None
+
+        # Visualize
+        plt.figure(i)           # to print plots individually
+        plt.plot(x, y, label='KDE')
+        plt.plot(x[peaks], y[peaks], "x", label='Peaks')
+        if trough is not None:
+            plt.plot(x[trough], y[trough], "o", label='Trough')
+        plt.legend()
+        plt.show()
+
+        if trough is not None:
+            # print(f'Trough value: {x[trough]}')
+            Troughs.append(x[trough])
+
+        # else:
+        #     print("Could not identify a clear trough between peaks.")
+
+    Troughs = [round(i, 2) for i in Troughs]
+    print(Troughs)
+    min_corr = np.mean(Troughs)
+    return min_corr
+
+
+def calculate_minCORR(cn_filters: list):
+    # do trough detection to calculate min_corr
+    Troughs = []
+    for i in range(len(cn_filters)):
+
+        data = cn_filters[i].flatten()
+        kde = gaussian_kde(data)
+
+        # Define the range for evaluating KDE
+        x = np.linspace(min(data), max(data), 1000)  # .2 to prevent it from detecting peaks at the beginning
+        y = kde.evaluate(x)
+
+        # Find peaks
+        peaks, _ = find_peaks(y, distance=20)  # 'distance' may need adjustment based on your data
+
+        # Find the trough between the main peaks (assuming the two main peaks are the first two found)
+        if len(peaks) > 1:
+            highest_peak_idx = np.argmax(y[peaks])
+            trough = np.argmin(y[peaks[highest_peak_idx]:peaks[-1]]) + peaks[highest_peak_idx]
+            if y[trough] + .2 > y[peaks[-1]] :
+                trough = None
+
+
+        else:
+            trough = None
+
+        # Visualize
+        plt.figure(i)           # to print plots individually
+        plt.plot(x, y, label='KDE')
+        plt.plot(x[peaks], y[peaks], "x", label='Peaks')
+        if trough is not None:
+            plt.plot(x[trough], y[trough], "o", label='Trough')
+        plt.legend()
+        plt.show()
+
+        if trough is not None:
+            # print(f'Trough value: {x[trough]}')
+            Troughs.append(x[trough])
+
+        # else:
+        #     print("Could not identify a clear trough between peaks.")
+
+    Troughs = [round(i, 2) for i in Troughs]
+    print(Troughs)
+    if Troughs:
+        min_corr = np.mean(Troughs)
+    else:
+        print('Auto min_corr selection failed, set to default value [min_corr = .85] and flag for human inspection')
+        min_corr = .85
+    return min_corr
 
 
 

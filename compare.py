@@ -9,6 +9,7 @@ import numpy as np
 #different matplotlib backend for better plots
 import matplotlib
 matplotlib.rcParams['backend'] = 'TkAgg'
+# matplotlib.use('Qt5Agg') # works for win 11
 ##
 import caiman as cm
 from caiman.source_extraction import cnmf
@@ -40,8 +41,8 @@ import natsort
 
 
 #%% import Results files
-    parameter_name = 'K='         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
-    path = r'O:\archive\projects\2023_students\Result_files\auto_pnr_banchmark\individual_results\*'          # path to the result files
+    parameter_name = '*ring'         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
+    path = r'O:\archive\projects\2023_students\Result_files\first_Benchmark_to_establish_parameter_baseline\\'          # path to the result files
     n_frames = 1000  # number of frames in the movie
     result_files_names = glob.glob(path + parameter_name + r'*.hdf5')
     result_files_names = natsort.natsorted(result_files_names)

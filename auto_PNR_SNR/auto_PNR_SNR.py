@@ -4,6 +4,9 @@ Code to automate the process of choosing the min_pnr and min_corr parameters
 #%% imports
     import matplotlib
     matplotlib.rcParams['backend'] = 'Qt5Agg'  # works for win 11
+    # Hotfix for win 11 plot issue
+    # from IPython import get_ipython
+    # get_ipython().run_line_magic('matplotlib', 'qt')
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.signal import find_peaks
@@ -68,7 +71,7 @@ Code to automate the process of choosing the min_pnr and min_corr parameters
 
         # calculate the PNR and SNR and use these values
         # cn_filters,pnr_list = get_cn_pnr(i)
-        min_corr_list = [7,.75,.8,.85,.9,.95]
+        min_corr_list = [.7]
         min_pnr_list =  [5,5.5,6,6.5,7,7.5]
         for min_corr in min_corr_list:
             for min_pnr in min_pnr_list:
@@ -119,7 +122,7 @@ def calculate_minCORR(cn_filters: list):
         kde = gaussian_kde(data)
 
         # Define the range for evaluating KDE
-        x = np.linspace(.45, max(data), 1000)  # .2 to prevent it from detecting peaks at the beginning
+        x = np.linspace(min(data), max(data), 1000)  # .2 to prevent it from detecting peaks at the beginning
         y = kde.evaluate(x)
 
         # Find peaks
@@ -127,7 +130,12 @@ def calculate_minCORR(cn_filters: list):
 
         # Find the trough between the main peaks (assuming the two main peaks are the first two found)
         if len(peaks) > 1:
-            trough = np.argmin(y[peaks[0]:peaks[1]]) + peaks[0]
+            highest_peak_idx = np.argmax(y[peaks])
+            trough = np.argmin(y[peaks[highest_peak_idx]:peaks[-1]]) + peaks[highest_peak_idx]
+            if y[trough] + .2 > y[peaks[-1]] :
+                trough = None
+
+
         else:
             trough = None
 
@@ -149,7 +157,11 @@ def calculate_minCORR(cn_filters: list):
 
     Troughs = [round(i, 2) for i in Troughs]
     print(Troughs)
-    min_corr = mean(Troughs)
+    if Troughs:
+        min_corr = np.mean(Troughs)
+    else:
+        print('Auto min_corr selection failed, set to default value [min_corr = .85] and flag for human inspection')
+        min_corr = .85
     return min_corr
 
 

@@ -7,11 +7,11 @@ Author: Bashar
     from calcium_pipeline_DB import CalciumImagingDataBaseAccess
     from calcium_pipeline_DB.CalciumImagingDataBaseAccess import CalciumImagingDataBaseAccess
     import caiman as cm
-##%% Simple run
-    minipipe = CalciumImagingDataBaseAccess(dview = None)         # Start new cluster
+    # matplotlib.use('Qt5Agg') # works for win 11
+#
+# ##%% Simple run
+#     minipipe = CalciumImagingDataBaseAccess(dview = None)         # Start new cluster
 
-#%% Simple run
-    minipipe = CalciumImagingDataBaseAccess(dview = None)
 
 
 #%%#%% Setup Code
