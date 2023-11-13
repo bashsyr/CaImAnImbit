@@ -134,7 +134,7 @@ def main():
     Ain = None          # possibility to seed with predetermined binary masks
     merge_thr = .7      # merging threshold, max correlation allowed
     rf = 40             # half-size of the patches in pixels. e.g., if rf=40, patches are 80x80
-    stride_cnmf = 20    # amount of overlap between the patches in pixels
+    stride_cnmf = 20    # amount of overlap between the patches i                                                                                                                                                                                                                                                                                                                           n pixels
     #                     (keep it at least large as gSiz, i.e 4 times the neuron size gSig)
     tsub = 2            # downsampling factor in time for initialization,
     #                     increase if you have memory problems

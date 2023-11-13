@@ -40,18 +40,33 @@ import natsort
 
 
 #%% import Results files
-    parameter_name = '*Auto_Time*'         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
-    path = r'O:\archive\projects\2023_students\Result_files\auto_pnr_banchmark\individual_results\*'          # path to the result files
+    parameter_name = ''         # if you want to look for results of special parameter eg: 'rf=' the '=' sign to only look for para_name
+    path = r'O:\archive\projects\2023_students\mesmerize\mesmerize-cnmfe\batch_1\results\*'          # path to the result files
     result_files_names = glob.glob(path + parameter_name + r'*.hdf5')
+    # result_files_names = result_files_names[:100:]
     result_files_names = natsort.natsorted(result_files_names)
     cnm = []    # array of ciman objects to load the results
     for name in result_files_names:
         cnm.append(cm.source_extraction.cnmf.cnmf.load_CNMF(name))
+    for cnm1 in cnm:
+        cnm1.stats = {}
+        cnm1.stats['Number_of_neuros'] = len(cnm1.estimates.C)
+        cnm1.stats['Number_of_accepted_neuros'] = len(cnm1.estimates.idx_components)
+        cnm1.stats['gSig'] = cnm1.params.init['gSig']
+        cnm1.stats['min_corr'] = cnm1.params.init['min_corr']
+        cnm1.stats['min_pnr'] = cnm1.params.init['min_pnr']
+        cnm1.stats['merge_thr'] = (cnm1.params.merging['merge_thr'])
+        cnm1.stats['K'] = cnm1.params.init['K']
+        if cnm1.stats['K'] == None: cnm1.stats['K'] = 0
 
+#%% sort the result files
+    sorted_cnm  = sorted(cnm, key=lambda x: (x.stats['gSig'][0],x.stats['min_corr'],x.stats['min_pnr'],x.stats['merge_thr'],x.stats['K']))
 
+#%% show basic stats
+    for i, n in enumerate(sorted_cnm):
+        print(i, n.stats)
 
-
-#%% plot Temporal results:
+    #%% plot Temporal results:
     results = cm.base.rois.register_multisession([m.estimates.A for m in cnm], dims = cnm[0].dims)
     fig, axes = plt.subplots(len(results[1]), figsize = (10,35))
     n_frames = len(cnm[0].estimates.YrA[0])
@@ -81,3 +96,5 @@ import natsort
                                          display_numbers=True,
                                          cmap='viridis')
     print("Number of shared Neurons=", len(common_neurons))
+
+
