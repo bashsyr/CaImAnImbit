@@ -65,7 +65,7 @@ def main():
 
 # %% First setup some parameters for motion correction
     # dataset dependent parameters
-    fnames = [r'D:\CaImAn_Data\3.avi']  # filename to be processed
+    fnames = [r'O:\archive\projects\2023_students\playground_folder\1.avi']  # filename to be processed
     #fnames = [download_demo(fnames[0])]  # download file if not already present
     filename_reorder = fnames
     fr = 10                          # movie frame rate

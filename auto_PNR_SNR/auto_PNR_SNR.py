@@ -5,8 +5,8 @@ Code to automate the process of choosing the min_pnr and min_corr parameters
     import matplotlib
     matplotlib.rcParams['backend'] = 'Qt5Agg'  # works for win 11
     # Hotfix for win 11 plot issue
-    # from IPython import get_ipython
-    # get_ipython().run_line_magic('matplotlib', 'qt')
+    from IPython import get_ipython
+    get_ipython().run_line_magic('matplotlib', 'qt')
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.signal import find_peaks
@@ -278,4 +278,4 @@ def get_cn_pnr (path: str , file_increment = 5, frame_increment = 1,n = 5):
         cn_filters.append(cn_filter)
         pnr_list.append(pnr)
 
-    return cn_filters,
+    return cn_filters,pnr_list

@@ -55,16 +55,6 @@ Author: Bashar
     #     plt.show()
 
 
-#%% Estimate minSNR with trough detection
-    weighted_matrix = create_weighted_matrix(446, 360)
-    cropped_matrix = crop_around_center(weighted_matrix, 418, 446)
-    original = cn_filter[0].flatten()
-    test = [a*b for a,b in zip(original,cropped_matrix.flatten())]
-    plt.hist(test,1000,range = (.1,1))
-
-
-
-
 
 
 #%% Calculate correlation image for a certain number  of frames
